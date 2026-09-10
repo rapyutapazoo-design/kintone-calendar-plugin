@@ -21,3 +21,25 @@
 .kcp-root-mobile .kcp-toggle-button {
   flex: 1;
 }
+
+/* --- カテゴリ絞り込みチップ（モバイル） --- */
+/* 折り返さずに横スクロールさせ、縦方向のスペースを圧迫しない。 */
+.kcp-root-mobile .kcp-filter {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.kcp-root-mobile .kcp-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.kcp-root-mobile .kcp-filter-chip {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 13px;
+}

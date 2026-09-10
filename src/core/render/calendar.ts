@@ -1,4 +1,5 @@
 import { Calendar, type EventClickArg, type EventContentArg, type EventInput } from "@fullcalendar/core";
+import jaLocale from "@fullcalendar/core/locales/ja";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
@@ -6,12 +7,13 @@ import listPlugin from "@fullcalendar/list";
 import type { KintoneApiClient } from "../data/fetch";
 import { fetchRecordsInRange } from "../data/fetch";
 import type { PluginConfig } from "../config/schema";
-import { resolveEventColor } from "./color";
+import { resolveCategoryValue, resolveEventColor } from "./color";
+import { collectCategories, filterEventsByCategory, type CategoryFilterState } from "./categoryFilter";
 import { recordsToEvents, type FieldTypeLookup } from "./toEvents";
 import type { FieldSchemaLookup } from "../template/parse";
 import { expandTemplate } from "../template/parse";
 import { resolveTemplateString } from "../template/resolve";
-import { getHolidayName } from "../holiday";
+import { getHolidayName, isHoliday } from "../holiday";
 import { bufferedMonthRange } from "../util/date";
 import type { KintoneFieldValue } from "../util/typeGuards";
 import { showCalendarError, showCalendarLoading, clearCalendarStatus } from "./status";
@@ -26,11 +28,21 @@ export interface CalendarRenderDeps {
   getViewCondition: () => string | null;
   onEventClick: (recordId: string, record: Record<string, KintoneFieldValue>, anchorEl: HTMLElement) => void;
   onFallbackToList?: () => void;
+  /** 表示するカテゴリの絞り込み状態。省略時は全件表示。 */
+  getVisibleCategories?: () => CategoryFilterState;
+  /** 読み込まれたイベントに含まれるカテゴリを通知する（絞り込み UI の同期に使う）。 */
+  onEventsLoaded?: (presentCategories: Set<string>) => void;
 }
 
 export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): Calendar {
+  // 絞り込みの切り替えでサーバーへ再問い合わせしないよう、表示中の期間のイベントを保持する。
+  let cacheKey = "";
+  let cachedEvents: EventInput[] = [];
+
   const calendar = new Calendar(container, {
     plugins: [dayGridPlugin, interactionPlugin, listPlugin],
+    locale: jaLocale,
+    buttonText: { today: "今日" },
     initialView: deps.config.display.initialView,
     firstDay: deps.config.display.firstDay,
     dayMaxEvents: deps.config.display.maxEventsPerDay,
@@ -42,10 +54,26 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
       right: "",
     },
     events: (fetchInfo, successCallback, failureCallback) => {
-      loadEvents(deps, fetchInfo.start).then(successCallback).catch((error) => {
-        failureCallback(error as Error);
-        showCalendarError(container, "予定の取得に失敗しました。", deps.onFallbackToList);
-      });
+      const key = `${fetchInfo.startStr}_${fetchInfo.endStr}`;
+
+      // 絞り込み変更時の refetchEvents はキャッシュで応答し、通信を発生させない。
+      if (key === cacheKey) {
+        successCallback(filterByCategory(cachedEvents, deps));
+        return;
+      }
+
+      loadEvents(deps, fetchInfo.start)
+        .then((events) => {
+          cacheKey = key;
+          cachedEvents = events;
+          successCallback(filterByCategory(events, deps));
+          // 絞り込み UI の同期は、このコールバックの外側で行う（再入を避けるため）。
+          queueMicrotask(() => deps.onEventsLoaded?.(collectCategories(events)));
+        })
+        .catch((error) => {
+          failureCallback(error as Error);
+          showCalendarError(container, "予定の取得に失敗しました。", deps.onFallbackToList);
+        });
     },
     loading: (isLoading) => {
       if (isLoading) {
@@ -62,10 +90,14 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
         deps.onEventClick(recordId, record, arg.el);
       }
     },
+    dayHeaderDidMount: (arg) => {
+      applyWeekdayClass(arg.el, arg.date, false);
+    },
     dayCellDidMount: (arg) => {
+      applyWeekdayClass(arg.el, arg.date, deps.config.display.showHolidays);
+
       if (!deps.config.display.showHolidays) return;
-      const dateOnly = toLocalDateOnly(arg.date);
-      const holidayName = getHolidayName(dateOnly);
+      const holidayName = getHolidayName(toLocalDateOnly(arg.date));
       if (!holidayName) return;
       arg.el.classList.add("kcp-holiday-cell");
       const frame = arg.el.querySelector(".fc-daygrid-day-top") ?? arg.el;
@@ -108,6 +140,7 @@ async function loadEvents(deps: CalendarRenderDeps, visibleStart: Date): Promise
 
   return events.map((event) => {
     const color = resolveEventColor(event.extendedProps.record, deps.config.colorRule);
+    const category = resolveCategoryValue(event.extendedProps.record, deps.config.colorRule);
     return {
       id: event.id,
       start: event.start,
@@ -115,7 +148,7 @@ async function loadEvents(deps: CalendarRenderDeps, visibleStart: Date): Promise
       allDay: event.allDay,
       backgroundColor: color.backgroundColor,
       textColor: color.textColor,
-      extendedProps: event.extendedProps,
+      extendedProps: { ...event.extendedProps, category },
     } satisfies EventInput;
   });
 }
@@ -132,6 +165,24 @@ function buildEventContentNode(arg: EventContentArg, deps: CalendarRenderDeps): 
   wrapper.title = text;
 
   return { domNodes: [wrapper] };
+}
+
+/**
+ * 曜日・祝日に応じた文字色クラスを付与する。
+ * 日曜と祝日は赤、土曜は青、平日は既定色とする。
+ */
+function applyWeekdayClass(el: HTMLElement, date: Date, considerHolidays: boolean): void {
+  const dow = date.getDay();
+  if (dow === 0 || (considerHolidays && isHoliday(toLocalDateOnly(date)))) {
+    el.classList.add("kcp-day-sun");
+  } else if (dow === 6) {
+    el.classList.add("kcp-day-sat");
+  }
+}
+
+/** 絞り込み状態に従って表示するイベントを選別する。 */
+function filterByCategory(events: EventInput[], deps: CalendarRenderDeps): EventInput[] {
+  return filterEventsByCategory(events, deps.getVisibleCategories?.() ?? { mode: "all" });
 }
 
 function toLocalDateOnly(date: Date): string {

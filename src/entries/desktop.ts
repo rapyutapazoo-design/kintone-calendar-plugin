@@ -4,7 +4,7 @@ import { createFieldSchemaLookup, createFieldTypeLookup, fetchFieldMeta } from "
 import { buildGoogleUrlFromRecord } from "../core/google/fromRecord";
 import { createGoogleCalendarLink } from "../core/google/button";
 import { initCalendar } from "../core/render/calendar";
-import { buildLegend } from "../core/render/legend";
+import { buildCategoryFilter } from "../core/render/categoryFilter";
 import { showConfigMissingNotice, showPluginConfigLoadError } from "../core/render/status";
 import { setupViewToggle } from "../core/render/viewToggle";
 import { readPluginConfig } from "../core/util/pluginId";
@@ -57,6 +57,10 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
     const calendarContainer = document.createElement("div");
     calendarContainer.className = "kcp-calendar-container";
 
+    // カレンダー生成前にフィルタを組み立てるため、参照は後から差し込む。
+    let calendar: ReturnType<typeof initCalendar> | undefined;
+    const filter = buildCategoryFilter(config.colorRule, () => calendar?.refetchEvents());
+
     const toggle = setupViewToggle({
       appId,
       viewId: event.viewId ?? "default",
@@ -68,13 +72,13 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
     root.appendChild(toggle.element);
 
     if (config.display.showLegend) {
-      root.appendChild(buildLegend(config.colorRule, false));
+      root.appendChild(filter.element);
     }
 
     root.appendChild(calendarContainer);
     rootContainer.appendChild(root);
 
-    initCalendar(calendarContainer, {
+    calendar = initCalendar(calendarContainer, {
       appId,
       config,
       fieldSchema,
@@ -86,6 +90,8 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
         adapter.onEventClick({ recordId, appId, anchorElement: anchorEl, record });
       },
       onFallbackToList: () => toggle.setState("list"),
+      getVisibleCategories: () => filter.getState(),
+      onEventsLoaded: (present) => filter.syncPresentCategories(present),
     });
 
     return event;

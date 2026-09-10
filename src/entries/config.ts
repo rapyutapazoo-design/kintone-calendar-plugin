@@ -510,7 +510,7 @@ function buildDisplaySection(state: PluginConfig): HTMLElement {
   legendCheckbox.addEventListener("change", () => {
     state.display.showLegend = legendCheckbox.checked;
   });
-  s.appendChild(row("凡例表示", legendCheckbox));
+  s.appendChild(row("カテゴリ絞り込みの表示", legendCheckbox));
 
   return s;
 }

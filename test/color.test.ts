@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveEventColor } from "../src/core/render/color";
+import { resolveCategoryValue, resolveEventColor, UNCATEGORIZED } from "../src/core/render/color";
 import type { ColorRuleConfig } from "../src/core/config/schema";
 
 const colorRule: ColorRuleConfig = {
@@ -40,5 +40,32 @@ describe("resolveEventColor", () => {
   it("値が空配列の場合はフォールバック色を返す", () => {
     const record = { category: { type: "CHECK_BOX", value: [] } };
     expect(resolveEventColor(record, colorRule)).toEqual({ backgroundColor: "#cccccc", textColor: "#000000" });
+  });
+});
+
+describe("resolveCategoryValue", () => {
+  it("カテゴリフィールドの値を返す", () => {
+    expect(resolveCategoryValue({ category: { type: "DROP_DOWN", value: "会議" } }, colorRule)).toBe("会議");
+  });
+
+  it("マッピングに無い値もそのまま返す", () => {
+    expect(resolveCategoryValue({ category: { type: "DROP_DOWN", value: "研修" } }, colorRule)).toBe("研修");
+  });
+
+  it("複数値は先頭値を採用する", () => {
+    expect(
+      resolveCategoryValue({ category: { type: "CHECK_BOX", value: ["作業", "会議"] } }, colorRule)
+    ).toBe("作業");
+  });
+
+  it("値が空なら UNCATEGORIZED を返す", () => {
+    expect(resolveCategoryValue({ category: { type: "DROP_DOWN", value: "" } }, colorRule)).toBe(UNCATEGORIZED);
+  });
+
+  it("カテゴリフィールド未設定なら UNCATEGORIZED を返す", () => {
+    const noCategory: ColorRuleConfig = { ...colorRule, categoryFieldCode: null };
+    expect(resolveCategoryValue({ category: { type: "DROP_DOWN", value: "会議" } }, noCategory)).toBe(
+      UNCATEGORIZED
+    );
   });
 });

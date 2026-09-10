@@ -77,32 +77,69 @@
   cursor: pointer;
 }
 
-.kcp-legend {
-  margin: 4px 0 8px;
-}
-
-.kcp-legend-list {
-  list-style: none;
+/* --- カテゴリ絞り込みチップ（凡例を兼ねる） --- */
+.kcp-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  padding: 0;
-  margin: 4px 0;
+  gap: 10px;
+  padding: 10px 0;
+  margin-bottom: 10px;
 }
 
-.kcp-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
+.kcp-filter-chip {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  background-color: #fff;
+  color: #555;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.kcp-legend-swatch {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+.kcp-filter-chip:hover {
+  background-color: #f5f5f5;
+}
+
+.kcp-filter-chip:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+/* 選択中のカテゴリチップは背景色・文字色をインラインスタイルで着色する。 */
+.kcp-filter-chip.is-active:hover {
+  filter: brightness(0.95);
+}
+
+/* 「すべて表示」チップ。背景のグラデーションは実行時に生成する。 */
+.kcp-filter-chip-all {
+  color: #fff;
+  border: none;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  opacity: 0.45;
+}
+
+.kcp-filter-chip-all:hover {
+  background-color: transparent;
+  opacity: 0.7;
+}
+
+.kcp-filter-chip-all.is-active {
+  opacity: 1;
+}
+
+/* --- 曜日・祝日の文字色 --- */
+/* FullCalendar 既定のセル色より優先させる必要があるため !important を用いる。 */
+.kcp-calendar-container .kcp-day-sun,
+.kcp-calendar-container .kcp-day-sun a {
+  color: #e60012 !important;
+}
+
+.kcp-calendar-container .kcp-day-sat,
+.kcp-calendar-container .kcp-day-sat a {
+  color: #0068b7 !important;
 }
 
 .kcp-google-button {
