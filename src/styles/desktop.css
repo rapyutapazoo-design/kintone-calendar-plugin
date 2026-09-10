@@ -1,0 +1,4 @@
+/* PC 固有の調整（common.css はビルド時に連結される） */
+.kcp-root {
+  max-width: 100%;
+}

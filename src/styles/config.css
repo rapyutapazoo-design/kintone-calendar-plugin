@@ -1,0 +1,137 @@
+/* 設定画面スタイル */
+body {
+  font-family: -apple-system, "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+  color: #333;
+  margin: 0;
+  padding: 16px;
+}
+
+.kcp-config-section {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.kcp-config-section h2 {
+  font-size: 15px;
+  margin: 0 0 12px;
+  border-left: 4px solid #3788d8;
+  padding-left: 8px;
+}
+
+.kcp-config-row {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 640px;
+}
+
+.kcp-config-row label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+}
+
+.kcp-config-row select,
+.kcp-config-row input[type="text"],
+.kcp-config-row textarea {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.kcp-config-row textarea {
+  min-height: 60px;
+  font-family: monospace;
+}
+
+.kcp-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.kcp-color-row input[type="color"] {
+  width: 36px;
+  height: 28px;
+  border: none;
+  padding: 0;
+}
+
+.kcp-preview-box {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kcp-preview-card {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  min-width: 200px;
+}
+
+.kcp-preview-band {
+  margin-top: 6px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.kcp-issue-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.kcp-issue-error {
+  color: #c0392b;
+}
+
+.kcp-issue-warning {
+  color: #b8860b;
+}
+
+.kcp-config-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 12px 0;
+  border-top: 1px solid #ddd;
+  display: flex;
+  gap: 8px;
+}
+
+.kcp-button-primary {
+  min-height: 40px;
+  padding: 0 20px;
+  background: #3788d8;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.kcp-button-secondary {
+  min-height: 40px;
+  padding: 0 20px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.kcp-config-status {
+  font-size: 12px;
+  padding: 8px 0;
+}

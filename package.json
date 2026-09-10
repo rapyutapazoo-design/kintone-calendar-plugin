@@ -1,0 +1,24 @@
+{
+  "name": "kintone-calendar-plugin",
+  "version": "0.1.0",
+  "description": "kintone 汎用カレンダープラグイン",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:plugin": "node scripts/build-plugin.mjs",
+    "build": "npm run typecheck && npm run test && npm run build:plugin"
+  },
+  "devDependencies": {
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/list": "^6.1.15",
+    "@kintone/plugin-packer": "^7.0.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "vitest": "^2.0.5"
+  }
+}

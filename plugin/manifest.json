@@ -1,0 +1,27 @@
+{
+  "manifest_version": 1,
+  "version": 1,
+  "type": "APP",
+  "name": {
+    "ja": "汎用カレンダープラグイン",
+    "en": "Universal Calendar Plugin"
+  },
+  "description": {
+    "ja": "任意の日付/日時フィールドを基準に、一覧画面のヘッダースペースへ月カレンダーを表示します。PC・モバイル両対応、標準一覧との切替、色分け、Googleカレンダー連携、祝日表示に対応します。",
+    "en": "Shows a month calendar in the list header based on any date field. Works on PC and mobile, with list toggle, color coding, Google Calendar links, and holidays."
+  },
+  "icon": "icon.png",
+  "desktop": {
+    "js": ["js/desktop.js"],
+    "css": ["css/desktop.css"]
+  },
+  "mobile": {
+    "js": ["js/mobile.js"],
+    "css": ["css/mobile.css"]
+  },
+  "config": {
+    "html": "config.html",
+    "js": ["js/config.js"],
+    "css": ["css/config.css"]
+  }
+}

@@ -25,3 +25,7 @@ npm-debug.log*
 .idea/
 .vscode/
 *.swp
+
+# generated plugin assets (rebuilt by `npm run build`)
+plugin/js/
+plugin/css/
