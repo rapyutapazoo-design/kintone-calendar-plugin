@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { addDays, bufferedMonthRange, computeEventPeriod, parseDateOnly, toDateOnlyString } from "../src/core/util/date";
+import {
+  addDays,
+  bufferedMonthRange,
+  computeEventPeriod,
+  formatForDisplay,
+  parseDateOnly,
+  toDateOnlyString,
+} from "../src/core/util/date";
 
 describe("computeEventPeriod (終日イベント)", () => {
   it("単日の終日イベントは end が開始日+1日になる（排他的End補正）", () => {
@@ -96,5 +103,29 @@ describe("bufferedMonthRange", () => {
     const { from, to } = bufferedMonthRange(2026, 11, 7);
     expect(toDateOnlyString(from)).toBe("2026-11-24");
     expect(toDateOnlyString(to)).toBe("2027-01-08");
+  });
+});
+
+describe("formatForDisplay", () => {
+  it("日付のみはタイムゾーン変換せずそのまま表記する", () => {
+    expect(formatForDisplay("2026-09-23")).toBe("2026/9/23");
+  });
+
+  it("UTC の日時をローカル時刻の読みやすい表記に変換する", () => {
+    // JST(+09:00) 環境では 2026/9/23 1:00 になる
+    const result = formatForDisplay("2026-09-22T16:00:00Z");
+    const expected = new Date("2026-09-22T16:00:00Z");
+    expect(result).toBe(
+      `${expected.getFullYear()}/${expected.getMonth() + 1}/${expected.getDate()} ` +
+        `${String(expected.getHours()).padStart(2, "0")}:${String(expected.getMinutes()).padStart(2, "0")}`
+    );
+  });
+
+  it("ISO 8601 形式でない文字列は元の値をそのまま返す", () => {
+    expect(formatForDisplay("未定")).toBe("未定");
+  });
+
+  it("空文字は空文字を返す", () => {
+    expect(formatForDisplay("")).toBe("");
   });
 });

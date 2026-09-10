@@ -14,9 +14,9 @@ import type { FieldSchemaLookup } from "../template/parse";
 import { expandTemplate } from "../template/parse";
 import { resolveTemplateString } from "../template/resolve";
 import { getHolidayName, isHoliday } from "../holiday";
-import { bufferedMonthRange } from "../util/date";
+import { rangeWithLookback } from "../util/date";
 import type { KintoneFieldValue } from "../util/typeGuards";
-import { showCalendarError, showCalendarLoading, clearCalendarStatus } from "./status";
+import { showCalendarError, showCalendarLoading, clearCalendarStatus, clearLoadingStatus } from "./status";
 
 export interface CalendarRenderDeps {
   appId: number;
@@ -43,6 +43,9 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
     plugins: [dayGridPlugin, interactionPlugin, listPlugin],
     locale: jaLocale,
     buttonText: { today: "今日" },
+    // 既定の "auto" では時刻付きイベントが点＋時刻のリスト表示になる。
+    // 常に帯（ブロック）で表示するため明示的に指定する。
+    eventDisplay: "block",
     initialView: deps.config.display.initialView,
     firstDay: deps.config.display.firstDay,
     dayMaxEvents: deps.config.display.maxEventsPerDay,
@@ -62,7 +65,7 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
         return;
       }
 
-      loadEvents(deps, fetchInfo.start)
+      loadEvents(deps, fetchInfo.start, fetchInfo.end)
         .then((events) => {
           cacheKey = key;
           cachedEvents = events;
@@ -71,6 +74,8 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
           queueMicrotask(() => deps.onEventsLoaded?.(collectCategories(events)));
         })
         .catch((error) => {
+          // eslint-disable-next-line no-console
+          console.error("[kintone-calendar-plugin] 予定の取得に失敗しました。", error);
           failureCallback(error as Error);
           showCalendarError(container, "予定の取得に失敗しました。", deps.onFallbackToList);
         });
@@ -79,7 +84,8 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
       if (isLoading) {
         showCalendarLoading(container);
       } else {
-        clearCalendarStatus(container);
+        // エラー表示は残す（clearCalendarStatus を使うとエラーまで消える）。
+        clearLoadingStatus(container);
       }
     },
     eventContent: (arg: EventContentArg) => buildEventContentNode(arg, deps),
@@ -112,12 +118,18 @@ export function initCalendar(container: HTMLElement, deps: CalendarRenderDeps): 
   return calendar;
 }
 
-async function loadEvents(deps: CalendarRenderDeps, visibleStart: Date): Promise<EventInput[]> {
-  const { from, to } = bufferedMonthRange(visibleStart.getFullYear(), visibleStart.getMonth());
+async function loadEvents(
+  deps: CalendarRenderDeps,
+  visibleStart: Date,
+  visibleEnd: Date
+): Promise<EventInput[]> {
+  // FullCalendar が要求してきた表示範囲をそのまま使う。月を推定し直さないこと。
+  const { from, to } = rangeWithLookback(visibleStart, visibleEnd);
 
   const result = await fetchRecordsInRange(deps.api, {
     appId: deps.appId,
     dateFieldCode: deps.config.dateMapping.startFieldCode,
+    dateFieldType: deps.fieldType(deps.config.dateMapping.startFieldCode),
     from,
     to,
     extraCondition: deps.config.dataSource.extraQueryCondition,

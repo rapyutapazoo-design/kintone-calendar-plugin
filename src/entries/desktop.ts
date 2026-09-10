@@ -67,6 +67,7 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
       calendarContainer,
       getStandardListElement: adapter.getStandardListElement,
       defaultState: config.display.defaultToggleState,
+      calendarOnlyElements: [filter.element],
     });
 
     root.appendChild(toggle.element);

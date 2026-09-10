@@ -43,3 +43,8 @@
   padding: 6px 14px;
   font-size: 13px;
 }
+
+/* --- モバイルのレコード詳細画面に差し込むアクション --- */
+.kcp-mobile-detail-action {
+  padding: 8px 12px;
+}

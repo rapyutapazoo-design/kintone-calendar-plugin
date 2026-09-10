@@ -63,6 +63,42 @@ export function validateConfig(config: PluginConfig, fieldExists: FieldExistence
     }
   }
 
+  // 帯テンプレートは必須。空のままだと帯に何も表示されない。
+  if (config.bandTemplate.template.trim() === "") {
+    issues.push({
+      path: "bandTemplate.template",
+      message: "帯に表示する内容が未設定です。表示するフィールドを1つ以上選択してください。",
+      severity: "error",
+    });
+  }
+
+  // テンプレート内のフィールドコードが実在するか確認する。
+  for (const [path, template] of [
+    ["bandTemplate.template", config.bandTemplate.template],
+    ["bandTemplate.mobileTemplate", config.bandTemplate.mobileTemplate ?? ""],
+    ["googleIntegration.titleTemplate", config.googleIntegration.titleTemplate],
+    ["googleIntegration.detailsTemplate", config.googleIntegration.detailsTemplate],
+  ] as const) {
+    for (const code of extractFieldCodes(template)) {
+      if (!fieldExists(code)) {
+        issues.push({
+          path,
+          message: `テンプレート内のフィールド "${code}" はこのアプリに存在しません。`,
+          severity: "error",
+        });
+      }
+    }
+  }
+
+  // Google 連携が有効ならタイトルは必須（空だと予定名の無い予定が作られる）。
+  if (config.googleIntegration.enabled && config.googleIntegration.titleTemplate.trim() === "") {
+    issues.push({
+      path: "googleIntegration.titleTemplate",
+      message: "Google カレンダーの予定タイトルが未設定です。タイトルに使うフィールドを指定してください。",
+      severity: "error",
+    });
+  }
+
   for (const entry of config.colorRule.mapping) {
     const contrast = contrastRatio(entry.backgroundColor, entry.textColor);
     if (contrast !== null && contrast < 3) {
@@ -75,6 +111,16 @@ export function validateConfig(config: PluginConfig, fieldExists: FieldExistence
   }
 
   return issues;
+}
+
+/** テンプレート文字列から {フィールドコード} を重複なく抽出する。 */
+export function extractFieldCodes(template: string): string[] {
+  const codes = new Set<string>();
+  for (const match of template.matchAll(/\{([^{}]+)\}/g)) {
+    const code = match[1]?.trim();
+    if (code) codes.add(code);
+  }
+  return [...codes];
 }
 
 /** WCAG 相対輝度に基づく簡易コントラスト比計算。#rrggbb 形式以外は null を返す。 */

@@ -82,7 +82,9 @@ export function createDefaultConfig(): PluginConfig {
     },
     bandTemplate: {
       mode: "list",
-      template: "{title}",
+      // どのアプリにも存在しないフィールドコードを初期値にすると、設定したつもりで
+      // 空文字が表示される無言の失敗を招くため、初期値は空にして保存前に必須チェックする。
+      template: "",
       mobileTemplate: null,
       listFieldCodes: [],
     },
@@ -106,7 +108,7 @@ export function createDefaultConfig(): PluginConfig {
     },
     googleIntegration: {
       enabled: true,
-      titleTemplate: "{title}",
+      titleTemplate: "",
       detailsTemplate: "",
       locationFieldCode: null,
       appendRecordLink: true,

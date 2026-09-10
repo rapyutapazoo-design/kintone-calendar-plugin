@@ -1,4 +1,8 @@
-import { createMobileAdapter, buildRecordDetailUrlMobile } from "../adapters/mobile";
+import {
+  createMobileAdapter,
+  buildRecordDetailUrlMobile,
+  findMobileDetailInsertTarget,
+} from "../adapters/mobile";
 import { loadPluginConfig } from "../core/config/load";
 import { createFieldSchemaLookup, createFieldTypeLookup, fetchFieldMeta } from "../core/data/fields";
 import { buildGoogleUrlFromRecord } from "../core/google/fromRecord";
@@ -69,6 +73,7 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
       calendarContainer,
       getStandardListElement: adapter.getStandardListElement,
       defaultState: config.display.defaultToggleState,
+      calendarOnlyElements: [filter.element],
     });
 
     root.appendChild(toggle.element);
@@ -140,8 +145,13 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
     const config = configResult.config;
     if (!config.dateMapping.startFieldCode) return event;
 
-    const headerSpace = kintone.mobile.app.record.getHeaderSpaceElement?.();
-    if (!headerSpace) return event;
+    // モバイル詳細画面にはヘッダースペース API が無いため、基準フィールドから挿入先を求める。
+    const insertTarget = findMobileDetailInsertTarget(config.dateMapping.startFieldCode);
+    if (!insertTarget) {
+      // eslint-disable-next-line no-console
+      console.info("[kintone-calendar-plugin] Google カレンダーボタンの挿入先が見つかりませんでした。");
+      return event;
+    }
 
     let fieldMeta;
     try {
@@ -167,7 +177,11 @@ import type { KintoneFieldValue } from "../core/util/typeGuards";
     );
 
     if (googleUrl) {
-      headerSpace.appendChild(createGoogleCalendarLink(googleUrl));
+      const link = createGoogleCalendarLink(googleUrl);
+      const wrapper = document.createElement("div");
+      wrapper.className = "kcp-mobile-detail-action";
+      wrapper.appendChild(link);
+      insertTarget.insertBefore(wrapper, insertTarget.firstChild);
     }
 
     return event;

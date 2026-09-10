@@ -11,8 +11,34 @@ export function getStandardListElementMobile(): HTMLElement | null {
   );
 }
 
+/**
+ * モバイルのレコード詳細 URL。
+ * PC は `#record=` だがモバイルは `?record=` 形式で、`#record=` を使うと
+ * kintone が「入力内容が正しくありません。(CB_VA01)」のエラー画面を返す（実機で確認済み）。
+ */
 export function buildRecordDetailUrlMobile(appId: number, recordId: string | number): string {
-  return `/k/m/${appId}/show#record=${recordId}`;
+  return `/k/m/${appId}/show?record=${recordId}`;
+}
+
+/**
+ * モバイルのレコード詳細画面で、要素を差し込む位置を返す。
+ * ヘッダースペース相当の API が無いため、基準フィールドの要素から
+ * フォームのレイアウト要素を辿り、その先頭に差し込む。
+ */
+export function findMobileDetailInsertTarget(baseFieldCode: string): HTMLElement | null {
+  try {
+    const fieldEl = kintone.mobile.app.record.getFieldElement?.(baseFieldCode);
+    if (!fieldEl) return null;
+
+    let node: HTMLElement | null = fieldEl;
+    for (let i = 0; i < 6 && node; i += 1) {
+      if (node.classList.contains("layout-gaia")) return node;
+      node = node.parentElement;
+    }
+    return fieldEl.parentElement;
+  } catch {
+    return null;
+  }
 }
 
 export function createMobileAdapter(): EnvironmentAdapter {

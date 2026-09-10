@@ -50,10 +50,17 @@ interface KintoneMobileAppApi {
   record: KintoneMobileAppRecordApi;
 }
 
-/** モバイル: レコード詳細画面 (kintone.mobile.app.record) */
+/**
+ * モバイル: レコード詳細画面 (kintone.mobile.app.record)
+ *
+ * PC の getHeaderMenuSpaceElement に相当する API は**存在しない**（実機で確認済み）。
+ * 要素を差し込めるのはスペースフィールド (getSpaceElement) か、
+ * 各フィールドの要素 (getFieldElement) を基準にした挿入のみ。
+ */
 interface KintoneMobileAppRecordApi {
   getId(): number | null;
-  getHeaderSpaceElement?(): HTMLElement | null;
+  getSpaceElement?(code: string): HTMLElement | null;
+  getFieldElement?(code: string): HTMLElement | null;
 }
 
 interface KintoneProxyResponse {

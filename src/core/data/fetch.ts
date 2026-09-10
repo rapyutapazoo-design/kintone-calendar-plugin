@@ -1,3 +1,4 @@
+import { toDateOnlyString, toKintoneDateTimeParam } from "../util/date";
 import type { KintoneFieldValue } from "../util/typeGuards";
 
 export interface KintoneApiClient {
@@ -8,6 +9,12 @@ export interface FetchRecordsParams {
   appId: number;
   /** クエリの期間条件に使う日時フィールドコード（開始日時フィールド） */
   dateFieldCode: string;
+  /**
+   * 上記フィールドの kintone 型（"DATE" / "DATETIME" など）。
+   * kintone は DATE 型を "YYYY-MM-DD"、DATETIME 型を "YYYY-MM-DDTHH:mm:ssZ" で比較するため、
+   * 型に合わせて書式を切り替える必要がある。未指定時は DATETIME とみなす。
+   */
+  dateFieldType?: string | undefined;
   /** 期間の開始（含む） */
   from: Date;
   /** 期間の終了（含まない） */
@@ -30,14 +37,17 @@ const PAGE_SIZE = 500;
  *  暴走を防ぐための安全弁として最大件数を設ける。 */
 const SAFETY_MAX_RECORDS = 2000;
 
-function toDateTimeParam(date: Date): string {
-  return date.toISOString();
+/** フィールド型に応じた比較値を生成する。DATE 型は日付のみ、それ以外は秒精度の ISO 8601。 */
+export function formatQueryValue(date: Date, fieldType: string | undefined): string {
+  return fieldType === "DATE" ? toDateOnlyString(date) : toKintoneDateTimeParam(date);
 }
 
-function buildQuery(params: FetchRecordsParams): string {
+export function buildQuery(params: FetchRecordsParams): string {
+  const from = formatQueryValue(params.from, params.dateFieldType);
+  const to = formatQueryValue(params.to, params.dateFieldType);
   const conditions: string[] = [
-    `${params.dateFieldCode} >= "${toDateTimeParam(params.from)}"`,
-    `${params.dateFieldCode} < "${toDateTimeParam(params.to)}"`,
+    `${params.dateFieldCode} >= "${from}"`,
+    `${params.dateFieldCode} < "${to}"`,
   ];
   if (params.extraCondition && params.extraCondition.trim() !== "") {
     conditions.push(`(${params.extraCondition.trim()})`);

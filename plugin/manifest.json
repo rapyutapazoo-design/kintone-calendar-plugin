@@ -1,6 +1,6 @@
 {
   "manifest_version": 1,
-  "version": 4,
+  "version": 7,
   "type": "APP",
   "name": {
     "ja": "汎用カレンダープラグイン",

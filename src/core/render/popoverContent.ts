@@ -1,5 +1,6 @@
 import type { ColorRuleConfig, DateMappingConfig } from "../config/schema";
 import { expandTemplate, type FieldSchemaLookup } from "../template/parse";
+import { formatForDisplay } from "../util/date";
 import { isKintoneFieldValue, type KintoneFieldValue } from "../util/typeGuards";
 
 /** ポップオーバーに表示する期間文字列（開始 〜 終了）を組み立てる。 */
@@ -17,7 +18,12 @@ export function buildPeriodText(
   }
 
   if (!startValue) return "";
-  return endValue && endValue !== startValue ? `${startValue} 〜 ${endValue}` : startValue;
+
+  // kintone の DATETIME は UTC 文字列のため、そのまま出すと "2026-09-22T16:00:00Z" と
+  // 表示されてしまう。閲覧者のローカル時刻へ変換して読みやすい表記にする。
+  const start = formatForDisplay(startValue);
+  const end = formatForDisplay(endValue);
+  return end && end !== start ? `${start} 〜 ${end}` : start;
 }
 
 /** カテゴリフィールドの表示名を組み立てる（先頭値採用）。 */
