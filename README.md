@@ -133,5 +133,14 @@ npm run build      # 型チェック→テスト→ビルド→プラグインzi
 
 `scripts/build-plugin.mjs` は、実機でしか露見しない致命的な事故を防ぐため、zip 化の前に以下を検査します。いずれかに違反するとビルドが失敗します。
 
-- **各バンドルに `kintone.$PLUGIN_ID` の参照が残っていること** — プラグイン ID は kintone がプラグイン配下の JS にのみ注入するこの変数からしか取得できません。参照を失うと `kintone.plugin.app.getConfig()` が実行時例外になり、一覧画面も設定画面も停止します。
+- **各バンドルに `kintone.$PLUGIN_ID` の参照が残っていること** — プラグイン ID は kintone がプラグイン配下の JS にのみ注入するこの変数から取得します。参照を失うと `kintone.plugin.app.getConfig()` が実行時例外になり、一覧画面も設定画面も停止します。
 - **`plugin/config.html` が HTML 断片であること** — 設定画面の HTML は kintone の設定ページ内に挿入されるため、`<!DOCTYPE>` / `<html>` / `<head>` / `<body>` や自前の `<script>` / `<link>` を含めてはいけません。CSS・JS は `manifest.json` の `config` セクションで宣言します。
+
+### プラグイン ID の取り扱い（重要）
+
+`kintone.$PLUGIN_ID` は **スクリプト評価中だけ有効な一時変数**です。kintone は各プラグインの JS を評価した直後にこの変数を破棄するため、`await` を挟んだ後やイベントハンドラの内部から参照しても `undefined` になります。
+
+そのため `src/core/util/pluginId.ts` は **モジュールのトップレベルで同期的に ID を捕捉**し、以降はその値を使い回します。**この捕捉を関数の内部へ移動してはいけません。** 実際に非同期ハンドラ内から参照する実装へ変更したところ、「プラグイン ID を取得できませんでした」で全画面が停止しました。
+
+保険として、`download.do?pluginId=...` 形式のスクリプト URL と、設定画面の URL クエリからも ID を拾えるフォールバックを備えています。この挙動は `test/pluginId.test.ts` の回帰テストで固定されています。
+
