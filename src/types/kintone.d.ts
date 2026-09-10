@@ -76,6 +76,11 @@ interface KintoneLoginUser {
 }
 
 interface KintoneStatic {
+  /**
+   * kintone がプラグイン配下の JavaScript にのみ注入するプラグイン ID。
+   * プラグイン外のカスタマイズ JS では undefined になるため、参照側で必ず検証する。
+   */
+  $PLUGIN_ID: string;
   app: KintoneAppApi;
   mobile: {
     app: KintoneMobileAppApi;

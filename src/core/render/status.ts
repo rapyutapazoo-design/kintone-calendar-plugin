@@ -39,6 +39,21 @@ export function showCalendarError(container: HTMLElement, message: string, onFal
   container.appendChild(overlay);
 }
 
+/**
+ * プラグイン ID や設定の読み出しそのものに失敗した場合の表示。
+ * 「未設定」とは原因が異なるため、案内文を分けて切り分けやすくする。
+ */
+export function showPluginConfigLoadError(container: HTMLElement): void {
+  clearCalendarStatus(container);
+  const overlay = document.createElement("div");
+  overlay.className = `${STATUS_CLASS} kcp-status-error`;
+  const text = document.createElement("p");
+  text.textContent =
+    "カレンダープラグインの設定を読み込めませんでした。プラグインを再インポートするか、システム管理者にお問い合わせください。";
+  overlay.appendChild(text);
+  container.appendChild(overlay);
+}
+
 export function showConfigMissingNotice(container: HTMLElement): void {
   clearCalendarStatus(container);
   const overlay = document.createElement("div");

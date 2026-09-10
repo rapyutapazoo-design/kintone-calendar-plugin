@@ -1,12 +1,8 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8" />
-<title>カレンダープラグイン設定</title>
-<link rel="stylesheet" type="text/css" href="css/config.css">
-</head>
-<body>
+<!--
+  kintone プラグインの設定画面。
+  この HTML は kintone の設定ページ内に「断片」として挿入されるため、
+  <!DOCTYPE> / <html> / <head> / <body> は記述しない。
+  CSS と JS は manifest.json の config セクションで宣言しており、
+  kintone が自動的に読み込むため、ここで <link> / <script> は書かない。
+-->
 <div id="kcp-config-root"></div>
-<script src="js/config.js"></script>
-</body>
-</html>

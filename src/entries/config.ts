@@ -13,9 +13,7 @@ import {
 import { expandTemplate } from "../core/template/parse";
 import { resolveEventColor } from "../core/render/color";
 import { getApiClient } from "../core/util/kintoneApi";
-import { getPluginId } from "../core/util/pluginId";
-
-const PLUGIN_ID = getPluginId();
+import { readPluginConfig } from "../core/util/pluginId";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -73,9 +71,22 @@ function section(title: string): HTMLElement {
   return s;
 }
 
+/**
+ * 設定フォームの描画先を得る。config.html の断片が想定通り挿入されなかった場合でも
+ * 画面が無言で空白になることを避けるため、無ければ body 直下に生成する。
+ */
+function resolveConfigRoot(): HTMLElement {
+  const existing = document.getElementById("kcp-config-root");
+  if (existing) return existing;
+
+  const created = document.createElement("div");
+  created.id = "kcp-config-root";
+  document.body.appendChild(created);
+  return created;
+}
+
 async function main(): Promise<void> {
-  const root = document.getElementById("kcp-config-root");
-  if (!root) return;
+  const root = resolveConfigRoot();
 
   const appId = kintone.app.getId();
   if (appId === null) {
@@ -92,7 +103,19 @@ async function main(): Promise<void> {
     return;
   }
 
-  const loaded = loadPluginConfig(kintone.plugin.app.getConfig(PLUGIN_ID));
+  const rawConfig = readPluginConfig();
+  if (!rawConfig) {
+    root.appendChild(
+      el(
+        "p",
+        "kcp-issue-error",
+        "プラグイン ID を取得できなかったため、設定を読み込めませんでした。プラグインを再インポートしてから、もう一度お試しください。"
+      )
+    );
+    return;
+  }
+
+  const loaded = loadPluginConfig(rawConfig);
   const config: PluginConfig = loaded.ok ? loaded.config : createDefaultConfig();
 
   renderForm(root, appId, fieldMeta, config);

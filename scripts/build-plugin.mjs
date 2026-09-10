@@ -72,6 +72,47 @@ function copyJsToPlugin() {
   }
 }
 
+/**
+ * プラグイン ID は kintone が注入する `kintone.$PLUGIN_ID` からしか取得できない。
+ * これを参照し損ねると kintone.plugin.app.getConfig() が実行時例外になり、
+ * 一覧画面も設定画面も無言で停止する（実際に初版で発生した事故）。
+ * バンドル後の各 JS に参照が残っていることを機械的に検査し、
+ * 欠けていればビルドを失敗させる。
+ */
+function assertPluginIdReference() {
+  const missing = [];
+  for (const e of entries) {
+    const code = fs.readFileSync(path.join(pluginJsDir, `${e.name}.js`), "utf8");
+    if (!code.includes("$PLUGIN_ID")) missing.push(`${e.name}.js`);
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `ビルド成果物に kintone.$PLUGIN_ID の参照がありません: ${missing.join(", ")}\n` +
+        "src/core/util/pluginId.ts が kintone.$PLUGIN_ID を参照しているか確認してください。"
+    );
+  }
+  console.log("[build-plugin] ok: kintone.$PLUGIN_ID reference found in all bundles");
+}
+
+/**
+ * config.html は kintone の設定ページに断片として挿入されるため、
+ * ドキュメント全体を構成するタグや自前のアセット読み込みを含んではならない。
+ */
+function assertConfigHtmlIsFragment() {
+  const html = fs.readFileSync(path.join(pluginDir, "config.html"), "utf8");
+  // コメントは実体を持たないため、検査対象から除外する。
+  const markup = html.replace(/<!--[\s\S]*?-->/g, "").toLowerCase();
+  const forbidden = ["<!doctype", "<html", "<head", "<body", "<script", "<link"];
+  const found = forbidden.filter((token) => markup.includes(token));
+  if (found.length > 0) {
+    throw new Error(
+      `plugin/config.html に断片として不正な記述が含まれています: ${found.join(", ")}\n` +
+        "CSS/JS は manifest.json の config セクションで宣言してください。"
+    );
+  }
+  console.log("[build-plugin] ok: config.html is a valid fragment");
+}
+
 function ensureIcon() {
   const iconPath = path.join(pluginDir, "icon.png");
   if (!fs.existsSync(iconPath)) {
@@ -119,6 +160,8 @@ async function main() {
   await buildJsEntries();
   buildCss();
   copyJsToPlugin();
+  assertPluginIdReference();
+  assertConfigHtmlIsFragment();
   ensureIcon();
   packPlugin();
   console.log("[build-plugin] done: dist/plugin.zip");

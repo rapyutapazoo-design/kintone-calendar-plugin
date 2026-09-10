@@ -5,13 +5,11 @@ import { buildGoogleUrlFromRecord } from "../core/google/fromRecord";
 import { createGoogleCalendarLink } from "../core/google/button";
 import { initCalendar } from "../core/render/calendar";
 import { buildLegend } from "../core/render/legend";
-import { showConfigMissingNotice } from "../core/render/status";
+import { showConfigMissingNotice, showPluginConfigLoadError } from "../core/render/status";
 import { setupViewToggle } from "../core/render/viewToggle";
-import { getPluginId } from "../core/util/pluginId";
+import { readPluginConfig } from "../core/util/pluginId";
 import { getApiClient } from "../core/util/kintoneApi";
 import type { KintoneFieldValue } from "../core/util/typeGuards";
-
-const PLUGIN_ID = getPluginId();
 
 (() => {
   kintone.events.on(["app.record.index.show"], async (event: KintoneEvent) => {
@@ -21,7 +19,13 @@ const PLUGIN_ID = getPluginId();
     const rootContainer = kintone.app.getHeaderSpaceElement();
     if (!rootContainer) return event;
 
-    const configResult = loadPluginConfig(kintone.plugin.app.getConfig(PLUGIN_ID));
+    const rawConfig = readPluginConfig();
+    if (!rawConfig) {
+      showPluginConfigLoadError(rootContainer);
+      return event;
+    }
+
+    const configResult = loadPluginConfig(rawConfig);
     if (!configResult.ok) {
       showConfigMissingNotice(rootContainer);
       return event;
@@ -92,7 +96,10 @@ const PLUGIN_ID = getPluginId();
     const appId = kintone.app.getId();
     if (appId === null || !event.record) return event;
 
-    const configResult = loadPluginConfig(kintone.plugin.app.getConfig(PLUGIN_ID));
+    const rawConfig = readPluginConfig();
+    if (!rawConfig) return event;
+
+    const configResult = loadPluginConfig(rawConfig);
     if (!configResult.ok || !configResult.config.googleIntegration.enabled) return event;
     const config = configResult.config;
     if (!config.dateMapping.startFieldCode) return event;
