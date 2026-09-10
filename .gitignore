@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+plugin-build/
+*.zip
+
+# kintone plugin signing key (NEVER commit)
+*.ppk
+*.pem
+private.ppk
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
